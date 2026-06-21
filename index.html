@@ -192,7 +192,7 @@ function dishByName(n){return DISHES.find(d=>d.name===n);}
 const MEAT=['肉','鸡','鸭','牛','猪','排骨','五花','梅花','腊肠','香肠','火腿','腊肉','培根','虾','鱼','蟹','鱿鱼','三文鱼'];
 const LEAFY=['绿叶菜','油麦菜','菠菜','空心菜','小白菜','青菜','娃娃菜','生菜','茼蒿','韭菜','芹菜','包菜'];
 const FRUIT=new Set(['菠萝','雪梨','梨','苹果','桃','桃子','芒果','葡萄','提子','西瓜','草莓','蓝莓','樱桃','车厘子','橙子','橘子','柑橘','柠檬','香蕉','猕猴桃','奇异果','哈密瓜','甜瓜','香瓜','椰子','牛油果']);
-function hasMeatN(n){return MEAT.some(k=>n.includes(k));}
+function hasMeatN(n){if(n.includes('蛋'))return false;return MEAT.some(k=>n.includes(k));}
 function isLeafyN(n){return LEAFY.some(k=>n.includes(k));}
 function isEggN(n){return n.includes('蛋');}
 function isVegN(n){if(hasMeatN(n)||isEggN(n)||isLeafyN(n)||FRUIT.has(n))return false;const NV=['大米','米饭','面','意面','芝士','奶','可乐','果汁','茶','咖啡','啤酒','蜂蜜','油','盐','酱','糖','淀粉','蒜','姜','葱','花生','核桃','板栗','腊','紫苏','薄荷','茴香','香菜','豆腐','香干'];if(NV.some(k=>n.includes(k)))return false;return true;}
