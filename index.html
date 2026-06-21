@@ -10,7 +10,7 @@
     --accent:#b9863f;--accent2:#f6ecd9;--shadow:0 8px 24px rgba(150,130,90,.10)}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;padding:16px 12px 60px}
-  .wrap{max-width:640px;margin:0 auto}
+  .wrap{max-width:900px;margin:0 auto}
   .hd{text-align:center;margin-bottom:6px}
   .hd h1{font-size:25px;margin:0;font-weight:800;letter-spacing:.02em}
   .hd .deco{font-size:18px;letter-spacing:6px;margin-top:2px;opacity:.85}
@@ -66,6 +66,18 @@
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:9}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .libdish{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  .feature{background:linear-gradient(180deg,#fffdf7,#fbf3e6);border-color:#ecdcc0;padding:22px}
+  .meals2{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:720px;margin:0 auto}
+  .lower{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:14px}.col .panel{margin-bottom:0}
+  .mealdish{display:flex;align-items:center;gap:8px;padding:9px 11px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:6px}
+  .mealdish .k{margin-left:auto;font-size:12px;color:var(--sub);white-space:nowrap}
+  .mealdish .x{color:#bb6a45;cursor:pointer;font-weight:800}
+  .fcluster{font-size:25px;line-height:1.6;text-align:center;background:#fbf6ec;border-radius:12px;padding:14px 12px;letter-spacing:3px;word-break:break-word;min-height:30px}
+  .flegend{margin-top:10px}
+  .frow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f3eedf;font-size:14px}
+  .frow .e{font-size:19px;flex:none}.frow .qt{color:var(--sub)}.frow .ctrl{margin-left:auto;display:flex;gap:6px;flex:none}
+  @media(max-width:600px){.meals2{grid-template-columns:1fr}.lower{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -78,40 +90,43 @@
   <span class="status wait" id="status">☁️ 连接中…</span>
 
   <!-- 菜单 -->
-  <div class="panel">
-    <div class="row between" style="margin-bottom:12px">
-      <div class="sec" style="margin:0">🍱 明日菜单</div>
-      <div class="row" style="gap:6px"><span class="mini" style="margin:0">人数</span>
-        <div class="stepper"><button id="pminus">−</button><span class="val" id="pVal">4</span><button id="pplus">＋</button></div>
+  <div class="panel feature">
+    <div class="sec" style="justify-content:center;font-size:18px;margin-bottom:6px">🍱 明日菜单</div>
+    <div class="row" style="justify-content:center;gap:8px;margin-bottom:16px"><span class="mini" style="margin:0">用餐人数</span>
+      <div class="stepper"><button id="pminus">−</button><span class="val" id="pVal">4</span><button id="pplus">＋</button></div>
+    </div>
+    <div id="meals" class="meals2"></div>
+  </div>
+
+  <div class="lower">
+    <div class="col">
+      <!-- 买菜清单 -->
+      <div class="panel">
+        <div class="sec">🛒 要买的菜 <span class="mini" id="buyNote" style="margin:0 0 0 4px"></span></div>
+        <div id="buyList"><div class="empty">选好菜后，这里列出冰箱里没有、需要买的</div></div>
+      </div>
+      <!-- 冰箱 -->
+      <div class="panel">
+        <div class="sec">🧊 冰箱有啥</div>
+        <div class="addrow">
+          <input id="fName" placeholder="食材，如 番茄">
+          <input id="fQty" type="number" step="0.5" value="1" style="flex:none;width:54px">
+          <select id="fUnit" style="flex:none;width:60px"><option>个</option><option>斤</option><option>根</option><option>把</option><option>瓶</option><option>只</option><option>片</option><option>盒</option></select>
+          <button class="btn btn-main" id="fAdd">＋</button>
+        </div>
+        <div class="addrow" style="margin-bottom:8px"><span class="mini" style="margin:0;align-self:center">买入日期</span><input id="fDate" type="date" style="flex:none;width:150px"></div>
+        <div class="fcluster" id="fcluster">🧊</div>
+        <div class="flegend" id="flegend"></div>
+        <div class="mini">−＋ 调数量，到 0 自动移除。只有 🥬蔬菜 🍎水果 提醒新鲜度(🟠4天/🔴7天)；大米·腊肠·肉类不提醒(耐放/可冷冻)。「做完了」按用量自动扣减。</div>
       </div>
     </div>
-    <div id="meals"></div>
-  </div>
-
-  <!-- 买菜清单 -->
-  <div class="panel">
-    <div class="sec">🛒 要买的菜 <span class="mini" id="buyNote" style="margin:0 0 0 4px"></span></div>
-    <div id="buyList"><div class="empty">选好菜后，这里列出冰箱里没有、需要买的</div></div>
-  </div>
-
-  <!-- 灵感 -->
-  <div class="panel">
-    <div class="sec">💡 灵感（按冰箱现有的推荐）</div>
-    <div id="recs"></div>
-  </div>
-
-  <!-- 冰箱 -->
-  <div class="panel">
-    <div class="sec">🧊 冰箱有啥</div>
-    <div class="addrow">
-      <input id="fName" placeholder="食材，如 番茄">
-      <input id="fQty" type="number" step="0.5" value="1" style="flex:none;width:54px">
-      <select id="fUnit" style="flex:none;width:60px"><option>个</option><option>斤</option><option>根</option><option>把</option><option>瓶</option><option>只</option><option>片</option><option>盒</option></select>
-      <button class="btn btn-main" id="fAdd">＋</button>
+    <div class="col">
+      <!-- 灵感 -->
+      <div class="panel">
+        <div class="sec">💡 灵感（按冰箱现有的推荐）</div>
+        <div id="recs"></div>
+      </div>
     </div>
-    <div class="addrow" style="margin-bottom:4px"><span class="mini" style="margin:0;align-self:center">买入日期</span><input id="fDate" type="date" style="flex:none;width:150px"></div>
-    <div id="fridgeList"></div>
-    <div class="mini">用 −＋ 调整数量；数量到 0 自动移除。🟠放4天 / 🔴放7天 提醒该吃。某顿「做完了」会按用量自动扣减。</div>
   </div>
 
   <!-- 菜谱库 -->
@@ -211,9 +226,9 @@ function renderMeals(){
     let kc=0;
     if(!m.dishes.length)chosen.innerHTML='<span class="mini" style="margin:0">还没选菜，抽一道或下面点选 👇</span>';
     m.dishes.forEach(n=>{const d=dishByName(n);const k=d?estKcal(d):0;kc+=k;
-      const c=document.createElement('span');c.className='dchip';c.innerHTML=n+' <span class="k">~'+k+'kcal</span> <span class="x">✕</span>';
-      c.querySelector('.x').onclick=()=>{m.dishes=m.dishes.filter(x=>x!==n);savePlan();renderMeals();renderBuy();};
-      chosen.appendChild(c);});
+      const r=document.createElement('div');r.className='mealdish';r.innerHTML='<span>'+n+'</span><span class="k">~'+k+'kcal/人</span><span class="x">✕</span>';
+      r.querySelector('.x').onclick=()=>{m.dishes=m.dishes.filter(x=>x!==n);savePlan();renderMeals();renderBuy();};
+      chosen.appendChild(r);});
     card.appendChild(chosen);
     if(m.dishes.length)card.insertAdjacentHTML('beforeend','<div class="mealkcal">这顿合计 ~'+kc+' kcal/人</div>');
     // 操作
@@ -278,15 +293,20 @@ function recCard(x){
 }
 
 /* 冰箱 */
+function isPerish(name){const P=new Set(['🥬','🍅','🥒','🍆','🫑','🌶️','🥕','🌽','🥦','🍄','🌿','🍃','🍍','🍐','🍎']);return P.has(emojiFor(name));}
 function renderFridge(){
-  const box=$('fridgeList');box.innerHTML='';
-  if(!FRIDGE.length){box.innerHTML='<div class="empty">冰箱还是空的，先加点 👆</div>';return;}
-  FRIDGE.forEach(it=>{const dd=days(it.added),cls=dd>=7?'old':dd>=4?'warn':'fresh',qty=Number(it.qty)||0;
-    const c=document.createElement('span');c.className='chip '+cls;
-    const minus=document.createElement('button');minus.className='qbtn';minus.textContent='−';minus.onclick=()=>decFridge(it);
-    const plus=document.createElement('button');plus.className='qbtn';plus.textContent='＋';plus.onclick=()=>incFridge(it);
-    const lb=document.createElement('span');lb.innerHTML=it.name+' '+emojiRep(it.name,qty)+' <span class="d">'+(dd<=0?'今天':dd+'天')+'</span>';
-    c.append(minus,lb,plus);box.appendChild(c);});
+  const cl=$('fcluster'),lg=$('flegend');
+  if(!FRIDGE.length){cl.textContent='🧊';lg.innerHTML='<div class="empty">冰箱还是空的，先加点 👆</div>';return;}
+  let pile='';FRIDGE.forEach(it=>{pile+=emojiFor(it.name).repeat(Math.max(1,Math.min(Math.round(Number(it.qty)||0),5)));});
+  cl.textContent=pile;lg.innerHTML='';
+  FRIDGE.forEach(it=>{const qty=Number(it.qty)||0,dd=days(it.added),per=isPerish(it.name);
+    let tag='';if(per){if(dd>=7)tag='<span style="color:#c4623e;font-weight:700">🔴'+dd+'天</span>';else if(dd>=4)tag='<span style="color:#d99a3a;font-weight:700">🟠'+dd+'天</span>';else tag='<span class="qt">'+(dd<=0?'今天':dd+'天')+'</span>';}
+    const row=document.createElement('div');row.className='frow';
+    row.innerHTML='<span class="e">'+emojiFor(it.name)+'</span><span class="nm">'+it.name+'</span><span class="qt">×'+(Number.isInteger(qty)?qty:qty.toFixed(1))+(it.unit||'')+'</span>'+tag+'<span class="ctrl"></span>';
+    const ctrl=row.querySelector('.ctrl');
+    const m=document.createElement('button');m.className='qbtn';m.textContent='−';m.onclick=()=>decFridge(it);
+    const p=document.createElement('button');p.className='qbtn';p.textContent='＋';p.onclick=()=>incFridge(it);
+    ctrl.append(m,p);lg.appendChild(row);});
 }
 async function addFridge(){const name=$('fName').value.trim();if(!name){toast('填个食材名');return;}const qty=parseFloat($('fQty').value)||1;const unit=$('fUnit').value;const added=$('fDate').value||new Date().toISOString().slice(0,10);
   const ex=FRIDGE.find(f=>norm(f.name)===norm(name)&&f.unit===unit);let error;
