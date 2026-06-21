@@ -189,6 +189,16 @@ function methodBonus(m){m=m||'';if(/不.{0,3}油/.test(m)||/无油/.test(m))retu
 function kcalOf(n,q,u){let k;if(u==='斤')k=KJIN[n];else k=KEA[n];if(k==null)k=(u==='斤')?300:40;return k*q;}
 function estKcal(d){let t=0;(d.ing||[]).forEach(it=>{if(it.opt)return;t+=kcalOf(norm(it.n),Number(it.q)||0,it.u);});t+=methodBonus(d.method);return Math.round(t/BASE/10)*10;}
 function dishByName(n){return DISHES.find(d=>d.name===n);}
+const MEAT=['肉','鸡','鸭','牛','猪','排骨','五花','梅花','腊肠','香肠','火腿','腊肉','培根','虾','鱼','蟹','鱿鱼','三文鱼'];
+const LEAFY=['绿叶菜','油麦菜','菠菜','空心菜','小白菜','青菜','娃娃菜','生菜','茼蒿','韭菜','芹菜','包菜'];
+const FRUIT=new Set(['菠萝','雪梨','梨','苹果','桃','桃子','芒果','葡萄','提子','西瓜','草莓','蓝莓','樱桃','车厘子','橙子','橘子','柑橘','柠檬','香蕉','猕猴桃','奇异果','哈密瓜','甜瓜','香瓜','椰子','牛油果']);
+function hasMeatN(n){return MEAT.some(k=>n.includes(k));}
+function isLeafyN(n){return LEAFY.some(k=>n.includes(k));}
+function isEggN(n){return n.includes('蛋');}
+function isVegN(n){if(hasMeatN(n)||isEggN(n)||isLeafyN(n)||FRUIT.has(n))return false;const NV=['大米','米饭','面','意面','芝士','奶','可乐','果汁','茶','咖啡','啤酒','蜂蜜','油','盐','酱','糖','淀粉','蒜','姜','葱','花生','核桃','板栗','腊','紫苏','薄荷','茴香','香菜','豆腐','香干'];if(NV.some(k=>n.includes(k)))return false;return true;}
+function dishType(d){const ing=(d.ing||[]).filter(i=>!i.opt).map(i=>norm(i.n));const meat=ing.some(hasMeatN),egg=ing.some(isEggN),leafy=ing.some(isLeafyN),veg=ing.some(isVegN);if(meat&&(leafy||veg))return '半荤半素';if(meat)return '荤';if(leafy)return '绿叶';if(egg&&veg)return '半荤半素';if(veg)return '非绿叶素';if(egg)return '荤';return '其他';}
+function typeTag(d){const t=dishType(d);const c={'荤':'#c4623e','半荤半素':'#d99a3a','绿叶':'#6b9a5a','非绿叶素':'#5b9aa0','其他':'#928a7f'}[t];return '<span style="font-size:11px;font-weight:700;color:'+c+'">'+t+'</span>';}
+function comboC(key){const pool=DISHES.filter(d=>(d.cats||[]).includes('C'));const pk=a=>a.length?a[Math.floor(Math.random()*a.length)].name:null;const meat=pool.filter(d=>dishType(d)==='荤'),leafy=pool.filter(d=>dishType(d)==='绿叶'),third=pool.filter(d=>['非绿叶素','半荤半素'].includes(dishType(d)));const sel=[...new Set([pk(meat),pk(leafy),pk(third)].filter(Boolean))];if(!sel.length){toast('C 类菜不够，先去菜谱库加几道');return;}plan[key].dishes=sel;savePlan();renderMeals();renderBuy();toast('配好一桌啦 🍽️ '+sel.join(' / '));}
 function haveSet(){return new Set(FRIDGE.map(f=>norm(f.name)));}
 function days(d){return Math.floor((new Date(new Date().toDateString())-new Date(d))/864e5);}
 const HALF=new Set(['洋葱','茄子','西兰花','西葫芦','南瓜','包菜','娃娃菜','卷心菜','圆白菜','萝卜','白萝卜','胡萝卜','冬瓜','苦瓜','丝瓜','菠萝','西瓜','哈密瓜','甜瓜','香瓜','花菜','山药']);
@@ -225,7 +235,7 @@ function renderMeals(){
     let kc=0;
     if(!m.dishes.length)chosen.innerHTML='<span class="mini" style="margin:0">还没选菜，抽一道或下面点选 👇</span>';
     m.dishes.forEach(n=>{const d=dishByName(n);const k=d?estKcal(d):0;kc+=k;const emos=(d&&d.ing||[]).filter(i=>!i.opt).map(i=>emojiFor(i.n)).join('');
-      const r=document.createElement('div');r.className='mealdish';r.innerHTML='<span class="nm" style="font-weight:700">'+n+'</span><span style="font-size:15px">'+emos+'</span><span class="k">~'+k+'kcal/人</span><span class="x">✕</span>';
+      const r=document.createElement('div');r.className='mealdish';r.innerHTML='<span class="nm" style="font-weight:700">'+n+'</span>'+(d?' '+typeTag(d):'')+'<span style="font-size:15px;margin-left:4px">'+emos+'</span><span class="k">~'+k+'kcal/人</span><span class="x">✕</span>';
       r.querySelector('.x').onclick=()=>{m.dishes=m.dishes.filter(x=>x!==n);savePlan();renderMeals();renderBuy();};
       chosen.appendChild(r);});
     card.appendChild(chosen);
@@ -233,8 +243,11 @@ function renderMeals(){
     // 操作
     const ops=document.createElement('div');ops.className='btns';ops.style.margin='8px 0';
     const roll=document.createElement('button');roll.className='btn btn-ghost';roll.textContent='🎲 抽一道';roll.onclick=()=>drawOne(key);
+    ops.appendChild(roll);
+    if(m.cat==='C'){const cb=document.createElement('button');cb.className='btn btn-ghost';cb.textContent='🍽️ 配一桌';cb.onclick=()=>comboC(key);ops.appendChild(cb);}
     const done=document.createElement('button');done.className='btn btn-main';done.textContent='✅ 做完了';done.onclick=()=>cooked(key);
-    ops.append(roll,done);card.appendChild(ops);
+    ops.appendChild(done);card.appendChild(ops);
+    if(m.cat==='C')card.insertAdjacentHTML('beforeend','<div class="mini" style="margin:2px 0 0">🥗 建议：1荤 + 1绿叶 + 1非绿叶素/半荤半素</div>');
     // 点选
     const pool=DISHES.filter(d=>(d.cats||[]).includes(m.cat));
     const det=document.createElement('details');det.innerHTML='<summary>📋 点选 '+CATS[m.cat].n+'（'+pool.length+'道）</summary>';
@@ -284,7 +297,7 @@ function renderRecs(){
 function recCard(x){
   const d=x.d;const el=document.createElement('div');el.className='rec';
   const cats=(d.cats||[]).map(c=>CATS[c]?CATS[c].n:c).join(' · ');
-  el.innerHTML='<div class="nm">'+d.name+' <span class="dchip" style="background:none;padding:0;color:var(--sub);font-size:12px">~'+estKcal(d)+'kcal/人</span></div><div class="cats">'+cats+'</div>'+(x.miss.length?'<div class="miss">还差：'+x.miss.join('、')+'</div>':'');
+  el.innerHTML='<div class="nm">'+d.name+' <span class="dchip" style="background:none;padding:0;color:var(--sub);font-size:12px">~'+estKcal(d)+'kcal/人</span></div><div class="cats">'+typeTag(d)+' · '+cats+'</div>'+(x.miss.length?'<div class="miss">还差：'+x.miss.join('、')+'</div>':'');
   const ops=document.createElement('div');ops.className='btns';ops.style.marginTop='7px';
   ['lunch','dinner'].forEach(k=>{const b=document.createElement('button');b.className='pick';b.textContent=(k==='lunch'?'＋午餐':'＋晚餐');
     b.onclick=()=>{const m=plan[k];if(m.cat==='D'){toast('这顿是躺平，先换个类别');return;}if(!m.dishes.includes(d.name))m.dishes.push(d.name);savePlan();renderMeals();renderBuy();toast('已加到'+(k==='lunch'?'午餐':'晚餐'));};ops.appendChild(b);});
@@ -338,7 +351,7 @@ function renderLib(){
   if(!DISHES.length){box.innerHTML='<div class="empty">还没有菜，点 🌱 载入示例</div>';return;}
   DISHES.forEach(d=>{const req=(d.ing||[]).filter(i=>!i.opt).map(i=>i.n+showQ(i.q,i.u)).join('、');const opt=(d.ing||[]).filter(i=>i.opt).map(i=>i.n).join('、');
     const el=document.createElement('div');el.className='libdish';
-    el.innerHTML='<div style="font-weight:800">'+d.name+' <span class="mini" style="margin:0">['+(d.cats||[]).join('/')+'] ~'+estKcal(d)+'kcal/人</span></div><div class="mini" style="margin:3px 0 0">主料：'+req+(opt?'　可选：'+opt:'')+'　·　'+(d.method||'')+'</div>';
+    el.innerHTML='<div style="font-weight:800">'+d.name+' '+typeTag(d)+' <span class="mini" style="margin:0">['+(d.cats||[]).join('/')+'] ~'+estKcal(d)+'kcal/人</span></div><div class="mini" style="margin:3px 0 0">主料：'+req+(opt?'　可选：'+opt:'')+'　·　'+(d.method||'')+'</div>';
     const bar=document.createElement('div');bar.className='btns';bar.style.marginTop='7px';
     const ed=document.createElement('button');ed.className='pick';ed.textContent='✏️ 改';ed.onclick=()=>editDish(d);
     const dl=document.createElement('button');dl.className='pick';dl.style.color='#bb6a45';dl.textContent='🗑 删';dl.onclick=()=>{if(confirm('删除「'+d.name+'」？'))delDish(d.name);};
