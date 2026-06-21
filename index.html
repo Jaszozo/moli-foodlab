@@ -48,6 +48,7 @@
   .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 12px;margin:0 7px 7px 0;font-size:14px;cursor:pointer;user-select:none;background:#f0ead a;background:#f0eadb}
   .chip.fresh{background:var(--B2)}.chip.warn{background:#fbf0db;color:#8a5a1a}.chip.old{background:#fae3da;color:#a04527}
   .chip .d{font-size:11px;opacity:.7}
+  .chip .qbtn{border:none;background:rgba(0,0,0,.07);border-radius:50%;width:21px;height:21px;font-size:15px;line-height:1;cursor:pointer;color:inherit;padding:0;flex:none}
   .grp-h{font-size:13px;font-weight:800;margin:12px 0 7px}
   .rec{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
   .rec .nm{font-size:15px;font-weight:700}
@@ -103,12 +104,14 @@
   <div class="panel">
     <div class="sec">🧊 冰箱有啥</div>
     <div class="addrow">
-      <input id="fName" placeholder="加一样食材，如 番茄">
-      <input id="fDate" type="date" style="flex:none;width:140px">
+      <input id="fName" placeholder="食材，如 番茄">
+      <input id="fQty" type="number" step="0.5" value="1" style="flex:none;width:54px">
+      <select id="fUnit" style="flex:none;width:60px"><option>个</option><option>斤</option><option>根</option><option>把</option><option>瓶</option><option>只</option><option>片</option><option>盒</option></select>
       <button class="btn btn-main" id="fAdd">＋</button>
     </div>
+    <div class="addrow" style="margin-bottom:4px"><span class="mini" style="margin:0;align-self:center">买入日期</span><input id="fDate" type="date" style="flex:none;width:150px"></div>
     <div id="fridgeList"></div>
-    <div class="mini">点食材＝用掉了（移除）。🟠放4天 / 🔴放7天 提醒该吃。某顿点「做完了」会自动划掉用到的。</div>
+    <div class="mini">用 −＋ 调整数量；数量到 0 自动移除。🟠放4天 / 🔴放7天 提醒该吃。某顿「做完了」会按用量自动扣减。</div>
   </div>
 
   <!-- 菜谱库 -->
@@ -161,6 +164,10 @@ const SEED=[
 const KJIN={排骨:1100,梅花肉:1050,五花肉:1700,鸡肉:825,肉糜:1250,牛腩:900,菌菇:110,绿叶菜:75,山药:280,茄子:110,大米:1700,豆腐:140,芹菜:60,虾仁:480};
 const KEA={番茄:30,腊肠:140,洋葱:60,胡萝卜:50,土豆:120,西葫芦:80,黄瓜:30,紫苏:10,青辣椒:20,青椒:20,雪梨:100,薄荷:5,大香菜:5,茴香:3,可乐:450,姜:3,大蒜:15,皮蛋:70,鸡蛋:70,芝士:60,意面:350,菠萝:250,山药:170,鸡:1600};
 const SYN={西红柿:'番茄',马铃薯:'土豆',卷心菜:'包菜',圆白菜:'包菜'};
+const EMOJI={番茄:'🍅',鸡蛋:'🥚',皮蛋:'🥚',土豆:'🥔',茄子:'🍆',青椒:'🫑',青辣椒:'🌶️',辣椒:'🌶️',黄瓜:'🥒',西葫芦:'🥒',洋葱:'🧅',胡萝卜:'🥕',大蒜:'🧄',姜:'🫚',玉米:'🌽',菌菇:'🍄',香菇:'🍄',金针菇:'🍄',西兰花:'🥦',绿叶菜:'🥬',油麦菜:'🥬',菠菜:'🥬',空心菜:'🥬',小白菜:'🥬',包菜:'🥬',青菜:'🥬',娃娃菜:'🥬',生菜:'🥬',茴香:'🌿',紫苏:'🌿',薄荷:'🌿',大香菜:'🌿',香菜:'🌿',鸡肉:'🍗',鸡:'🍗',鸡翅:'🍗',排骨:'🍖',梅花肉:'🥩',五花肉:'🥓',牛腩:'🥩',牛肉:'🥩',肉糜:'🥩',猪肉:'🥩',猪肉末:'🥩',虾仁:'🦐',虾:'🦐',鱼:'🐟',豆腐:'⬜',臭豆腐:'⬜',香干:'⬜',芝士:'🧀',腊肠:'🌭',意面:'🍝',面:'🍜',米饭:'🍚',大米:'🍚',菠萝:'🍍',雪梨:'🍐',苹果:'🍎',可乐:'🥤',山药:'🍠',花生:'🥜'};
+const HEARTS=['💛','💚','💙','💜','🧡','❤️','🤎','🩷'];
+function emojiFor(name){const n=norm(name);if(EMOJI[n])return EMOJI[n];for(const k in EMOJI){if(n.includes(k))return EMOJI[k];}let s=0;for(const ch of (name||''))s+=ch.charCodeAt(0);return HEARTS[s%HEARTS.length];}
+function emojiRep(name,qty){const e=emojiFor(name),c=Math.max(1,Math.min(Math.round(qty),8));return e.repeat(c)+(qty>8?' ×'+(Number.isInteger(qty)?qty:qty.toFixed(1)):'');}
 
 let DISHES=[],FRIDGE=[],plan={people:4,lunch:{cat:'A',dishes:[]},dinner:{cat:'C',dishes:[]}};
 const $=id=>document.getElementById(id);
@@ -229,11 +236,11 @@ function bindCat(card){card.querySelectorAll('.catbtn').forEach(b=>b.onclick=()=
 function drawOne(key){const m=plan[key];const pool=DISHES.filter(d=>(d.cats||[]).includes(m.cat)&&!m.dishes.includes(d.name));if(!pool.length){toast('没有更多可抽的了');return;}const pick=pool[Math.floor(Math.random()*pool.length)];m.dishes.push(pick.name);savePlan();renderMeals();renderBuy();toast('抽到：'+pick.name);}
 async function cooked(key){const m=plan[key];if(!m.dishes.length){toast('这顿还没选菜');return;}
   if(!confirm('「'+(key==='lunch'?'午餐':'晚餐')+'」做完了？把用到的食材从冰箱划掉，并清空这顿。'))return;
-  const used=new Set();m.dishes.forEach(n=>{const d=dishByName(n);(d&&d.ing||[]).forEach(it=>{if(!it.opt)used.add(norm(it.n));});});
-  const toDel=FRIDGE.filter(f=>used.has(norm(f.name)));
-  for(const f of toDel){await SB.from('ml_fridge').delete().eq('id',f.id);}
+  const need={};m.dishes.forEach(n=>{const d=dishByName(n);(d&&d.ing||[]).forEach(it=>{if(it.opt)return;const k=norm(it.n);need[k]=(need[k]||0)+(Number(it.q)||0)*(plan.people/BASE);});});
+  let cnt=0;
+  for(const f of FRIDGE){const k=norm(f.name);if(need[k]!=null){const left=Math.round(((Number(f.qty)||0)-need[k])*10)/10;cnt++;if(left<=0.05){await SB.from('ml_fridge').delete().eq('id',f.id);}else{await SB.from('ml_fridge').update({qty:left}).eq('id',f.id);}}}
   m.dishes=[];await SB.from('ml_plan').update({lunch:plan.lunch,dinner:plan.dinner}).eq('id',1);
-  toast('已划掉 '+toDel.length+' 样食材');loadAll();
+  toast('已按用量扣减 '+cnt+' 样食材');loadAll();
 }
 
 /* 买菜清单 */
@@ -274,10 +281,20 @@ function recCard(x){
 function renderFridge(){
   const box=$('fridgeList');box.innerHTML='';
   if(!FRIDGE.length){box.innerHTML='<div class="empty">冰箱还是空的，先加点 👆</div>';return;}
-  FRIDGE.forEach(it=>{const dd=days(it.added),cls=dd>=7?'old':dd>=4?'warn':'fresh';const c=document.createElement('span');c.className='chip '+cls;c.innerHTML=it.name+' <span class="d">'+(dd<=0?'今天':dd+'天')+'</span>';c.onclick=()=>delFridge(it.id);box.appendChild(c);});
+  FRIDGE.forEach(it=>{const dd=days(it.added),cls=dd>=7?'old':dd>=4?'warn':'fresh',qty=Number(it.qty)||0;
+    const c=document.createElement('span');c.className='chip '+cls;
+    const minus=document.createElement('button');minus.className='qbtn';minus.textContent='−';minus.onclick=()=>decFridge(it);
+    const plus=document.createElement('button');plus.className='qbtn';plus.textContent='＋';plus.onclick=()=>incFridge(it);
+    const lb=document.createElement('span');lb.innerHTML=it.name+' '+emojiRep(it.name,qty)+' <span class="d">'+(dd<=0?'今天':dd+'天')+'</span>';
+    c.append(minus,lb,plus);box.appendChild(c);});
 }
-async function addFridge(){const name=$('fName').value.trim();if(!name){toast('填个食材名');return;}const added=$('fDate').value||new Date().toISOString().slice(0,10);const {error}=await SB.from('ml_fridge').insert({name,added});if(error){toast('保存失败');return;}$('fName').value='';toast('已记入冰箱');loadAll();}
-async function delFridge(id){const {error}=await SB.from('ml_fridge').delete().eq('id',id);if(!error)loadAll();}
+async function addFridge(){const name=$('fName').value.trim();if(!name){toast('填个食材名');return;}const qty=parseFloat($('fQty').value)||1;const unit=$('fUnit').value;const added=$('fDate').value||new Date().toISOString().slice(0,10);
+  const ex=FRIDGE.find(f=>norm(f.name)===norm(name)&&f.unit===unit);let error;
+  if(ex){({error}=await SB.from('ml_fridge').update({qty:(Number(ex.qty)||0)+qty}).eq('id',ex.id));}
+  else{({error}=await SB.from('ml_fridge').insert({name,qty,unit,added}));}
+  if(error){toast('保存失败');return;}$('fName').value='';$('fQty').value='1';toast('已记入冰箱');loadAll();}
+async function incFridge(it){await SB.from('ml_fridge').update({qty:(Number(it.qty)||0)+1}).eq('id',it.id);loadAll();}
+async function decFridge(it){const q=Math.round(((Number(it.qty)||0)-1)*10)/10;if(q<=0){await SB.from('ml_fridge').delete().eq('id',it.id);}else{await SB.from('ml_fridge').update({qty:q}).eq('id',it.id);}loadAll();}
 
 /* 菜谱库 */
 function addIngRow(n,q,u,opt){const d=document.createElement('div');d.className='ing-row';
