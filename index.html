@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>茉莉的美味 Lab</title>
+<style>
+  :root{--bg:#f4f1e8;--paper:#fffdf7;--ink:#4a4334;--sub:#9b9079;--line:#e9e2d2;
+    --A:#e0954a;--A2:#fbecd8;--B:#7bae6e;--B2:#e9f3e3;--C:#c77b9e;--C2:#f7e7ef;--D:#a9a18c;--D2:#eeeae0;
+    --accent:#b9863f;--accent2:#f6ecd9;--shadow:0 8px 24px rgba(150,130,90,.10)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;padding:16px 12px 60px}
+  .wrap{max-width:640px;margin:0 auto}
+  .hd{text-align:center;margin-bottom:6px}
+  .hd h1{font-size:25px;margin:0;font-weight:800;letter-spacing:.02em}
+  .hd .deco{font-size:18px;letter-spacing:6px;margin-top:2px;opacity:.85}
+  .hd .by{font-size:12px;color:var(--sub);margin-top:2px}
+  .status{display:block;text-align:center;font-size:12px;font-weight:700;margin:8px 0 14px}
+  .status.ok{color:#5e8a52}.status.bad{color:#bb6a45}.status.wait{color:var(--sub)}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+  .sec{font-size:14px;font-weight:800;margin:0 0 12px;display:flex;align-items:center;gap:6px}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .between{justify-content:space-between}
+  .stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .stepper button{width:36px;height:36px;border:none;background:#f0ead c;background:#f1ebdb;color:var(--ink);font-size:20px;cursor:pointer}
+  .stepper .val{min-width:46px;text-align:center;font-weight:800}
+  .btn{border:none;border-radius:999px;padding:9px 15px;font-size:14px;cursor:pointer;font-weight:700;transition:.15s}
+  .btn-main{background:var(--accent);color:#fff}.btn-ghost{background:#f1ebdb;color:var(--ink)}.btn:active{transform:scale(.97)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+  .meal{border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px;background:#fffefb}
+  .meal h3{margin:0 0 9px;font-size:16px}
+  .catbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .catbtn{border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:7px 9px;font-size:12px;font-weight:700;cursor:pointer;color:var(--sub);line-height:1.2;text-align:center}
+  .catbtn small{display:block;font-weight:500;font-size:10px;opacity:.8}
+  .catbtn.on.A{background:var(--A2);border-color:var(--A);color:#a8642a}
+  .catbtn.on.B{background:var(--B2);border-color:var(--B);color:#4d7a40}
+  .catbtn.on.C{background:var(--C2);border-color:var(--C);color:#9c557a}
+  .catbtn.on.D{background:var(--D2);border-color:var(--D);color:#766e5a}
+  .chosen{margin:6px 0}
+  .dchip{display:inline-flex;align-items:center;gap:6px;background:var(--accent2);border-radius:999px;padding:6px 11px;margin:0 6px 6px 0;font-size:14px}
+  .dchip .k{font-size:11px;color:var(--sub)}.dchip .x{cursor:pointer;color:#bb6a45;font-weight:800}
+  .pick{border:none;background:#f1ebdb;border-radius:999px;padding:5px 11px;margin:0 6px 6px 0;font-size:13px;cursor:pointer;font-weight:600}
+  .pick.on{background:var(--accent);color:#fff}
+  .mealkcal{font-size:12px;color:var(--sub);font-weight:700;margin-top:2px}
+  .lazy{color:var(--sub);font-size:14px;padding:6px 0}
+  .buyitem,.today-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f3eedf;font-size:15px}
+  .buyitem .q{margin-left:auto;color:var(--sub);font-weight:700;font-variant-numeric:tabular-nums}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 12px;margin:0 7px 7px 0;font-size:14px;cursor:pointer;user-select:none;background:#f0ead a;background:#f0eadb}
+  .chip.fresh{background:var(--B2)}.chip.warn{background:#fbf0db;color:#8a5a1a}.chip.old{background:#fae3da;color:#a04527}
+  .chip .d{font-size:11px;opacity:.7}
+  .grp-h{font-size:13px;font-weight:800;margin:12px 0 7px}
+  .rec{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  .rec .nm{font-size:15px;font-weight:700}
+  .rec .miss{font-size:12px;color:var(--A);margin-top:2px}
+  .rec .cats{font-size:11px;color:var(--sub);margin-top:2px}
+  .empty{color:var(--sub);font-size:14px;text-align:center;padding:12px}
+  input,select{font:inherit;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fffdf7;color:var(--ink)}
+  .addrow{display:flex;gap:8px;margin-bottom:9px}.addrow input{flex:1;min-width:0}
+  .ing-row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+  .ing-row input.n{flex:1;min-width:0}.ing-row input.q{width:54px;flex:none}.ing-row select{width:60px;flex:none}
+  .ing-row label{font-size:12px;color:var(--sub);white-space:nowrap}
+  details{margin-top:6px}summary{cursor:pointer;font-size:14px;color:var(--accent);font-weight:800;padding:7px 0}
+  .mini{font-size:12px;color:var(--sub);margin:4px 0 9px}
+  .ck{display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:13px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .libdish{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hd">
+    <h1>🦊 茉莉的美味 Lab</h1>
+    <div class="deco">🍅 🥬 🍄 🧄 🌽</div>
+    <div class="by">主厨 · 茉莉　|　明日两餐计划</div>
+  </div>
+  <span class="status wait" id="status">☁️ 连接中…</span>
+
+  <!-- 菜单 -->
+  <div class="panel">
+    <div class="row between" style="margin-bottom:12px">
+      <div class="sec" style="margin:0">🍱 明日菜单</div>
+      <div class="row" style="gap:6px"><span class="mini" style="margin:0">人数</span>
+        <div class="stepper"><button id="pminus">−</button><span class="val" id="pVal">4</span><button id="pplus">＋</button></div>
+      </div>
+    </div>
+    <div id="meals"></div>
+  </div>
+
+  <!-- 买菜清单 -->
+  <div class="panel">
+    <div class="sec">🛒 要买的菜 <span class="mini" id="buyNote" style="margin:0 0 0 4px"></span></div>
+    <div id="buyList"><div class="empty">选好菜后，这里列出冰箱里没有、需要买的</div></div>
+  </div>
+
+  <!-- 灵感 -->
+  <div class="panel">
+    <div class="sec">💡 灵感（按冰箱现有的推荐）</div>
+    <div id="recs"></div>
+  </div>
+
+  <!-- 冰箱 -->
+  <div class="panel">
+    <div class="sec">🧊 冰箱有啥</div>
+    <div class="addrow">
+      <input id="fName" placeholder="加一样食材，如 番茄">
+      <input id="fDate" type="date" style="flex:none;width:140px">
+      <button class="btn btn-main" id="fAdd">＋</button>
+    </div>
+    <div id="fridgeList"></div>
+    <div class="mini">点食材＝用掉了（移除）。🟠放4天 / 🔴放7天 提醒该吃。某顿点「做完了」会自动划掉用到的。</div>
+  </div>
+
+  <!-- 菜谱库 -->
+  <div class="panel">
+    <details>
+      <summary>📚 茉莉的菜谱库（加菜 / 改 / 删）</summary>
+      <p class="mini">按 <b>4 人份</b> 填。主料必填；勾「可选」＝冰箱有就加。做法用于估卡路里(蒸煮/炖≈不加油，炒/煎/炸加油)。</p>
+      <div class="addrow"><input id="dName" placeholder="菜名"></div>
+      <div style="margin-bottom:8px"><span class="mini" style="margin:0">类别(可多选)：</span>
+        <label class="ck"><input type="checkbox" class="catck" value="A">A忙忙</label>
+        <label class="ck"><input type="checkbox" class="catck" value="B">B瘦瘦</label>
+        <label class="ck"><input type="checkbox" class="catck" value="C">C大理欢愉</label>
+      </div>
+      <div class="addrow"><input id="dMethod" placeholder="做法，如 先煎后炖 / 清炒 / 焖煮(不加油)"></div>
+      <div id="ingRows"></div>
+      <div class="btns" style="margin:8px 0">
+        <button class="btn btn-ghost" id="addIng">＋ 加食材</button>
+        <button class="btn btn-main" id="saveDish">💾 保存这道菜</button>
+        <button class="btn btn-ghost" id="seed">🌱 载入茉莉的菜谱</button>
+      </div>
+      <div id="libList" style="margin-top:10px"></div>
+    </details>
+  </div>
+
+  <div class="by" style="text-align:center;margin-top:8px">家庭共享 · 改动实时同步 · 茉莉的美味 Lab</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL='https://mjrxmecenqqcefoiofvo.supabase.co';
+const SB_KEY='sb_publishable_HC-DRUG1jceUUbHpItOzZw_PPK5qlIo';
+const SB=supabase.createClient(SB_URL,SB_KEY);
+const BASE=4;
+const CATS={A:{n:'忙忙料理',s:'电饭锅/微波/空气炸'},B:{n:'瘦瘦料理',s:'严控卡路里'},C:{n:'大理人的秘密欢愉',s:'丰盛·云南特色'},D:{n:'躺平',s:'不做饭'}};
+
+const SEED=[
+ {name:'腊肠番茄煲仔饭',cats:['A','C'],method:'焖煮(不加油)',ing:[{n:'番茄',q:1,u:'个'},{n:'腊肠',q:2,u:'根'},{n:'大米',q:0.8,u:'斤'},{n:'洋葱',q:0.5,u:'个',opt:1},{n:'胡萝卜',q:1,u:'根',opt:1},{n:'土豆（小）',q:1,u:'个',opt:1},{n:'西葫芦',q:1,u:'个',opt:1},{n:'绿叶菜',q:0.5,u:'斤',opt:1}]},
+ {name:'老奶洋芋',cats:['A','B','C'],method:'蒸后再炒(少油)',ing:[{n:'土豆（大）',q:2,u:'个'},{n:'茴香',q:5,u:'根',opt:1},{n:'番茄',q:1,u:'个',opt:1},{n:'茄子',q:0.5,u:'个',opt:1}]},
+ {name:'菌菇鸡饭',cats:['A','C'],method:'焖煮(不加油,鸡带皮)',ing:[{n:'菌菇',q:0.5,u:'斤'},{n:'鸡肉',q:1,u:'斤'},{n:'绿叶菜',q:0.5,u:'斤'},{n:'大米',q:0.8,u:'斤'}]},
+ {name:'绿玉紫苏',cats:['C'],method:'清炒',ing:[{n:'西葫芦',q:1,u:'个'},{n:'黄瓜',q:1,u:'根'},{n:'紫苏',q:1,u:'把'},{n:'青辣椒',q:1,u:'个'}]},
+ {name:'碧玉沙拉',cats:['B','C'],method:'凉拌(沙拉)',ing:[{n:'雪梨',q:1,u:'个'},{n:'黄瓜',q:1,u:'根'},{n:'西葫芦',q:0.5,u:'个'},{n:'薄荷',q:0.5,u:'把',opt:1}]},
+ {name:'可乐排骨',cats:['C'],method:'先煎后炖',ing:[{n:'排骨',q:1,u:'斤'},{n:'可乐',q:1,u:'瓶'},{n:'姜',q:0.5,u:'个'}]},
+ {name:'鲜炖鸡汤',cats:['C'],method:'清炖(不额外加油)',ing:[{n:'鸡',q:0.5,u:'只'},{n:'姜',q:0.5,u:'个'},{n:'山药',q:0.3,u:'根',opt:1},{n:'菌菇',q:0.5,u:'斤',opt:1}]},
+ {name:'上汤时蔬',cats:['C'],method:'少油炒后煮',ing:[{n:'皮蛋',q:1,u:'个'},{n:'鸡蛋',q:1,u:'个'},{n:'绿叶菜',q:1,u:'斤'}]},
+ {name:'番茄意面',cats:['A'],method:'少油',ing:[{n:'番茄',q:2,u:'个'},{n:'肉糜',q:0.5,u:'斤'},{n:'土豆（小）',q:1,u:'个'},{n:'芝士',q:2,u:'片'},{n:'意面',q:1,u:'把'},{n:'菌菇',q:4,u:'个',opt:1}]},
+ {name:'菠萝梅花肉',cats:['C'],method:'先煎后焖煮',ing:[{n:'梅花肉',q:1,u:'斤'},{n:'菠萝',q:1,u:'个'},{n:'姜',q:0.5,u:'个'},{n:'大蒜',q:0.5,u:'头'}]}
+];
+
+const KJIN={排骨:1100,梅花肉:1050,五花肉:1700,鸡肉:825,肉糜:1250,牛腩:900,菌菇:110,绿叶菜:75,山药:280,茄子:110,大米:1700,豆腐:140,芹菜:60,虾仁:480};
+const KEA={番茄:30,腊肠:140,洋葱:60,胡萝卜:50,土豆:120,西葫芦:80,黄瓜:30,紫苏:10,青辣椒:20,青椒:20,雪梨:100,薄荷:5,大香菜:5,茴香:3,可乐:450,姜:3,大蒜:15,皮蛋:70,鸡蛋:70,芝士:60,意面:350,菠萝:250,山药:170,鸡:1600};
+const SYN={西红柿:'番茄',马铃薯:'土豆',卷心菜:'包菜',圆白菜:'包菜'};
+
+let DISHES=[],FRIDGE=[],plan={people:4,lunch:{cat:'A',dishes:[]},dinner:{cat:'C',dishes:[]}};
+const $=id=>document.getElementById(id);
+function norm(s){s=(s||'').replace(/（[^）]*）/g,'').replace(/\([^)]*\)/g,'').trim();return SYN[s]||s;}
+function methodBonus(m){m=m||'';if(/不.{0,3}油/.test(m)||/无油/.test(m))return 0;if(m.includes('沙拉')||m.includes('凉拌'))return 0;if(m.includes('炸'))return 250;if(m.includes('煎'))return 200;if(m.includes('烤'))return 100;if(m.includes('炒'))return 150;if(m.includes('油'))return 120;return 0;}
+function kcalOf(n,q,u){let k;if(u==='斤')k=KJIN[n];else k=KEA[n];if(k==null)k=(u==='斤')?300:40;return k*q;}
+function estKcal(d){let t=0;(d.ing||[]).forEach(it=>{if(it.opt)return;t+=kcalOf(norm(it.n),Number(it.q)||0,it.u);});t+=methodBonus(d.method);return Math.round(t/BASE/10)*10;}
+function dishByName(n){return DISHES.find(d=>d.name===n);}
+function haveSet(){return new Set(FRIDGE.map(f=>norm(f.name)));}
+function days(d){return Math.floor((new Date(new Date().toDateString())-new Date(d))/864e5);}
+function rndBuy(q,u){return u==='斤'?Math.ceil(q*2)/2:Math.ceil(q);}
+function showQ(q,u){return (Number.isInteger(q)?q:q.toFixed(1))+u;}
+let tT;function toast(m){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('show'),1600);}
+function setStatus(c,t){const s=$('status');s.className='status '+c;s.textContent=t;}
+
+async function loadAll(){
+  try{
+    const [d,f,p]=await Promise.all([SB.from('ml_dishes').select('*'),SB.from('ml_fridge').select('*'),SB.from('ml_plan').select('*').eq('id',1).maybeSingle()]);
+    if(d.error||f.error||p.error)throw(d.error||f.error||p.error);
+    DISHES=d.data||[]; FRIDGE=(f.data||[]).sort((a,b)=>new Date(a.added)-new Date(b.added));
+    if(p.data){plan={people:p.data.people||4,lunch:p.data.lunch||{cat:'A',dishes:[]},dinner:p.data.dinner||{cat:'C',dishes:[]}};}
+    $('pVal').textContent=plan.people;
+    setStatus('ok','☁️ 已同步'); renderMeals(); renderBuy(); renderRecs(); renderFridge(); renderLib();
+  }catch(e){setStatus('bad','⚠️ 未连接（请先在 Supabase 跑建表 SQL）');console.error(e);}
+}
+let pT;async function savePlan(){clearTimeout(pT);pT=setTimeout(async()=>{await SB.from('ml_plan').update({people:plan.people,lunch:plan.lunch,dinner:plan.dinner}).eq('id',1);},250);}
+
+/* 菜单 */
+function renderMeals(){
+  const box=$('meals');box.innerHTML='';
+  [['lunch','午餐'],['dinner','晚餐']].forEach(([key,label])=>{
+    const m=plan[key];
+    const card=document.createElement('div');card.className='meal';
+    let html='<h3>'+(key==='lunch'?'🌞':'🌙')+' '+label+'</h3><div class="catbar">';
+    ['A','B','C','D'].forEach(c=>{html+='<button class="catbtn '+c+(m.cat===c?' on':'')+'" data-k="'+key+'" data-c="'+c+'">'+c+' '+CATS[c].n+'<small>'+CATS[c].s+'</small></button>';});
+    html+='</div>';
+    card.innerHTML=html;
+    if(m.cat==='D'){card.insertAdjacentHTML('beforeend','<div class="lazy">😴 今天躺平，不做这顿啦～</div>');box.appendChild(card);bindCat(card);return;}
+    // 已选
+    const chosen=document.createElement('div');chosen.className='chosen';
+    let kc=0;
+    if(!m.dishes.length)chosen.innerHTML='<span class="mini" style="margin:0">还没选菜，抽一道或下面点选 👇</span>';
+    m.dishes.forEach(n=>{const d=dishByName(n);const k=d?estKcal(d):0;kc+=k;
+      const c=document.createElement('span');c.className='dchip';c.innerHTML=n+' <span class="k">~'+k+'kcal</span> <span class="x">✕</span>';
+      c.querySelector('.x').onclick=()=>{m.dishes=m.dishes.filter(x=>x!==n);savePlan();renderMeals();renderBuy();};
+      chosen.appendChild(c);});
+    card.appendChild(chosen);
+    if(m.dishes.length)card.insertAdjacentHTML('beforeend','<div class="mealkcal">这顿合计 ~'+kc+' kcal/人</div>');
+    // 操作
+    const ops=document.createElement('div');ops.className='btns';ops.style.margin='8px 0';
+    const roll=document.createElement('button');roll.className='btn btn-ghost';roll.textContent='🎲 抽一道';roll.onclick=()=>drawOne(key);
+    const done=document.createElement('button');done.className='btn btn-main';done.textContent='✅ 做完了';done.onclick=()=>cooked(key);
+    ops.append(roll,done);card.appendChild(ops);
+    // 点选
+    const pool=DISHES.filter(d=>(d.cats||[]).includes(m.cat));
+    const det=document.createElement('details');det.innerHTML='<summary>📋 点选 '+CATS[m.cat].n+'（'+pool.length+'道）</summary>';
+    const grid=document.createElement('div');grid.style.marginTop='6px';
+    if(!pool.length)grid.innerHTML='<div class="empty">这类还没有菜，去菜谱库加</div>';
+    pool.forEach(d=>{const b=document.createElement('button');b.className='pick'+(m.dishes.includes(d.name)?' on':'');b.textContent=d.name+' ~'+estKcal(d);
+      b.onclick=()=>{const i=m.dishes.indexOf(d.name);if(i>=0)m.dishes.splice(i,1);else m.dishes.push(d.name);savePlan();renderMeals();renderBuy();};grid.appendChild(b);});
+    det.appendChild(grid);card.appendChild(det);
+    box.appendChild(card);bindCat(card);
+  });
+}
+function bindCat(card){card.querySelectorAll('.catbtn').forEach(b=>b.onclick=()=>{plan[b.dataset.k].cat=b.dataset.c;savePlan();renderMeals();renderBuy();});}
+function drawOne(key){const m=plan[key];const pool=DISHES.filter(d=>(d.cats||[]).includes(m.cat)&&!m.dishes.includes(d.name));if(!pool.length){toast('没有更多可抽的了');return;}const pick=pool[Math.floor(Math.random()*pool.length)];m.dishes.push(pick.name);savePlan();renderMeals();renderBuy();toast('抽到：'+pick.name);}
+async function cooked(key){const m=plan[key];if(!m.dishes.length){toast('这顿还没选菜');return;}
+  if(!confirm('「'+(key==='lunch'?'午餐':'晚餐')+'」做完了？把用到的食材从冰箱划掉，并清空这顿。'))return;
+  const used=new Set();m.dishes.forEach(n=>{const d=dishByName(n);(d&&d.ing||[]).forEach(it=>{if(!it.opt)used.add(norm(it.n));});});
+  const toDel=FRIDGE.filter(f=>used.has(norm(f.name)));
+  for(const f of toDel){await SB.from('ml_fridge').delete().eq('id',f.id);}
+  m.dishes=[];await SB.from('ml_plan').update({lunch:plan.lunch,dinner:plan.dinner}).eq('id',1);
+  toast('已划掉 '+toDel.length+' 样食材');loadAll();
+}
+
+/* 买菜清单 */
+function renderBuy(){
+  const have=haveSet(),map={},f=plan.people/BASE;
+  [plan.lunch,plan.dinner].forEach(m=>{if(m.cat==='D')return;m.dishes.forEach(n=>{const d=dishByName(n);(d&&d.ing||[]).forEach(it=>{if(it.opt)return;if(have.has(norm(it.n)))return;const k=it.n+'|'+it.u;map[k]=(map[k]||0)+(Number(it.q)||0)*f;});});});
+  const box=$('buyList');box.innerHTML='';const keys=Object.keys(map);
+  $('buyNote').textContent=keys.length?('（'+plan.people+'人份）'):'';
+  if(!keys.length){box.innerHTML='<div class="empty">冰箱够用，或还没选菜 🙂</div>';return;}
+  keys.sort().forEach(k=>{const [n,u]=k.split('|');const row=document.createElement('div');row.className='buyitem';row.innerHTML='<span>'+n+'</span><span class="q">'+showQ(rndBuy(map[k],u),u)+'</span>';box.appendChild(row);});
+}
+
+/* 灵感 */
+function renderRecs(){
+  const box=$('recs');box.innerHTML='';
+  if(!DISHES.length){box.innerHTML='<div class="empty">菜谱库空的，去下面点 🌱 载入茉莉的菜谱</div>';return;}
+  const have=haveSet();
+  if(!have.size){box.innerHTML='<div class="empty">先往冰箱加点食材，我就按现有的推荐 🙂</div>';return;}
+  const a=DISHES.map(d=>{const req=(d.ing||[]).filter(it=>!it.opt).map(it=>norm(it.n));const miss=req.filter(n=>!have.has(n));return{d,miss,hit:req.length-miss.length};});
+  const green=a.filter(x=>x.miss.length===0&&x.hit>0).sort((x,y)=>y.hit-x.hit);
+  const amber=a.filter(x=>x.miss.length>0&&x.miss.length<=2).sort((x,y)=>x.miss.length-y.miss.length||y.hit-x.hit);
+  function block(title,arr,lim){if(!arr.length)return;box.insertAdjacentHTML('beforeend','<div class="grp-h">'+title+'（'+arr.length+'）</div>');arr.slice(0,lim||arr.length).forEach(x=>box.appendChild(recCard(x)));}
+  block('🟢 现在就能做',green);
+  block('🟡 差一两样',amber,8);
+  if(!green.length&&!amber.length)box.innerHTML='<div class="empty">现有食材凑不齐整道菜，去买点主料吧～</div>';
+}
+function recCard(x){
+  const d=x.d;const el=document.createElement('div');el.className='rec';
+  const cats=(d.cats||[]).map(c=>CATS[c]?CATS[c].n:c).join(' · ');
+  el.innerHTML='<div class="nm">'+d.name+' <span class="dchip" style="background:none;padding:0;color:var(--sub);font-size:12px">~'+estKcal(d)+'kcal/人</span></div><div class="cats">'+cats+'</div>'+(x.miss.length?'<div class="miss">还差：'+x.miss.join('、')+'</div>':'');
+  const ops=document.createElement('div');ops.className='btns';ops.style.marginTop='7px';
+  ['lunch','dinner'].forEach(k=>{const b=document.createElement('button');b.className='pick';b.textContent=(k==='lunch'?'＋午餐':'＋晚餐');
+    b.onclick=()=>{const m=plan[k];if(m.cat==='D'){toast('这顿是躺平，先换个类别');return;}if(!m.dishes.includes(d.name))m.dishes.push(d.name);savePlan();renderMeals();renderBuy();toast('已加到'+(k==='lunch'?'午餐':'晚餐'));};ops.appendChild(b);});
+  el.appendChild(ops);return el;
+}
+
+/* 冰箱 */
+function renderFridge(){
+  const box=$('fridgeList');box.innerHTML='';
+  if(!FRIDGE.length){box.innerHTML='<div class="empty">冰箱还是空的，先加点 👆</div>';return;}
+  FRIDGE.forEach(it=>{const dd=days(it.added),cls=dd>=7?'old':dd>=4?'warn':'fresh';const c=document.createElement('span');c.className='chip '+cls;c.innerHTML=it.name+' <span class="d">'+(dd<=0?'今天':dd+'天')+'</span>';c.onclick=()=>delFridge(it.id);box.appendChild(c);});
+}
+async function addFridge(){const name=$('fName').value.trim();if(!name){toast('填个食材名');return;}const added=$('fDate').value||new Date().toISOString().slice(0,10);const {error}=await SB.from('ml_fridge').insert({name,added});if(error){toast('保存失败');return;}$('fName').value='';toast('已记入冰箱');loadAll();}
+async function delFridge(id){const {error}=await SB.from('ml_fridge').delete().eq('id',id);if(!error)loadAll();}
+
+/* 菜谱库 */
+function addIngRow(n,q,u,opt){const d=document.createElement('div');d.className='ing-row';
+  d.innerHTML='<input class="n" placeholder="食材" value="'+(n||'')+'"><input class="q" type="number" step="0.1" placeholder="量" value="'+(q??'')+'"><select class="u"><option>斤</option><option>个</option><option>根</option><option>把</option><option>片</option><option>瓶</option><option>只</option><option>头</option></select><label><input type="checkbox" class="opt" '+(opt?'checked':'')+'>可选</label>';
+  $('ingRows').appendChild(d);if(u)d.querySelector('.u').value=u;}
+function readCats(){return [...document.querySelectorAll('.catck:checked')].map(c=>c.value);}
+function setCats(cs){document.querySelectorAll('.catck').forEach(c=>c.checked=(cs||[]).includes(c.value));}
+async function saveDish(){
+  const name=$('dName').value.trim();if(!name){toast('填菜名');return;}
+  const cats=readCats();if(!cats.length){toast('至少选一个类别');return;}
+  const method=$('dMethod').value.trim();
+  const ing=[...document.querySelectorAll('#ingRows .ing-row')].map(r=>{const o={n:r.querySelector('.n').value.trim(),q:parseFloat(r.querySelector('.q').value),u:r.querySelector('.u').value};if(r.querySelector('.opt').checked)o.opt=1;return o;}).filter(x=>x.n&&!isNaN(x.q));
+  if(!ing.length){toast('至少一个食材');return;}
+  const {error}=await SB.from('ml_dishes').upsert({name,cats,method,ing},{onConflict:'name'});
+  if(error){toast('保存失败：'+error.message);return;}
+  $('dName').value='';$('dMethod').value='';setCats([]);$('ingRows').innerHTML='';addIngRow();toast('已保存：'+name);loadAll();
+}
+function editDish(d){$('dName').value=d.name;setCats(d.cats||[]);$('dMethod').value=d.method||'';$('ingRows').innerHTML='';(d.ing||[]).forEach(it=>addIngRow(it.n,it.q,it.u,it.opt));if(!(d.ing||[]).length)addIngRow();$('dName').scrollIntoView({behavior:'smooth',block:'center'});toast('已载入，改完点保存（同名覆盖）');}
+async function delDish(name){const {error}=await SB.from('ml_dishes').delete().eq('name',name);if(!error){toast('已删除');loadAll();}}
+function renderLib(){
+  const box=$('libList');box.innerHTML='';
+  if(!DISHES.length){box.innerHTML='<div class="empty">还没有菜，点 🌱 载入示例</div>';return;}
+  DISHES.forEach(d=>{const req=(d.ing||[]).filter(i=>!i.opt).map(i=>i.n+showQ(i.q,i.u)).join('、');const opt=(d.ing||[]).filter(i=>i.opt).map(i=>i.n).join('、');
+    const el=document.createElement('div');el.className='libdish';
+    el.innerHTML='<div style="font-weight:800">'+d.name+' <span class="mini" style="margin:0">['+(d.cats||[]).join('/')+'] ~'+estKcal(d)+'kcal/人</span></div><div class="mini" style="margin:3px 0 0">主料：'+req+(opt?'　可选：'+opt:'')+'　·　'+(d.method||'')+'</div>';
+    const bar=document.createElement('div');bar.className='btns';bar.style.marginTop='7px';
+    const ed=document.createElement('button');ed.className='pick';ed.textContent='✏️ 改';ed.onclick=()=>editDish(d);
+    const dl=document.createElement('button');dl.className='pick';dl.style.color='#bb6a45';dl.textContent='🗑 删';dl.onclick=()=>{if(confirm('删除「'+d.name+'」？'))delDish(d.name);};
+    bar.append(ed,dl);el.appendChild(bar);box.appendChild(el);});
+}
+async function seed(){const {error}=await SB.from('ml_dishes').upsert(SEED,{onConflict:'name'});if(error){toast('载入失败：'+error.message);return;}toast('茉莉的菜谱已载入 🌱');loadAll();}
+
+/* 实时 */
+function sub(){SB.channel('ml-rt').on('postgres_changes',{event:'*',schema:'public',table:'ml_dishes'},()=>loadAll()).on('postgres_changes',{event:'*',schema:'public',table:'ml_fridge'},()=>loadAll()).on('postgres_changes',{event:'*',schema:'public',table:'ml_plan'},()=>loadAll()).subscribe();}
+
+/* 启动 */
+$('fDate').value=new Date().toISOString().slice(0,10);
+$('pminus').onclick=()=>{plan.people=Math.max(1,plan.people-1);$('pVal').textContent=plan.people;savePlan();renderBuy();};
+$('pplus').onclick=()=>{plan.people=Math.min(50,plan.people+1);$('pVal').textContent=plan.people;savePlan();renderBuy();};
+$('fAdd').onclick=addFridge;$('fName').addEventListener('keydown',e=>{if(e.key==='Enter')addFridge();});
+$('addIng').onclick=()=>addIngRow();$('saveDish').onclick=saveDish;$('seed').onclick=seed;
+addIngRow();addIngRow();
+window.addEventListener('focus',loadAll);
+loadAll();sub();
+</script>
+</body>
+</html>
