@@ -29,8 +29,8 @@
   .btns{display:flex;gap:8px;flex-wrap:wrap}
   .meal{border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px;background:#fffefb}
   .meal h3{margin:0 0 9px;font-size:16px}
-  .catbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-  .catbtn{border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:7px 9px;font-size:12px;font-weight:700;cursor:pointer;color:var(--sub);line-height:1.2;text-align:center}
+  .catbar{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px}
+  .catbtn{border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:7px 4px;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--sub);line-height:1.25;text-align:center}
   .catbtn small{display:block;font-weight:500;font-size:10px;opacity:.8}
   .catbtn.on.A{background:var(--A2);border-color:var(--A);color:#a8642a}
   .catbtn.on.B{background:var(--B2);border-color:var(--B);color:#4d7a40}
@@ -70,7 +70,7 @@
   .meals2{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:720px;margin:0 auto}
   .lower{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
   .col{display:flex;flex-direction:column;gap:14px}.col .panel{margin-bottom:0}
-  .mealdish{display:flex;align-items:center;gap:8px;padding:9px 11px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:6px}
+  .mealdish{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--accent2);border:2px solid var(--accent);border-radius:10px;margin-bottom:6px}
   .mealdish .k{margin-left:auto;font-size:12px;color:var(--sub);white-space:nowrap}
   .mealdish .x{color:#bb6a45;cursor:pointer;font-weight:800}
   .fcluster{font-size:25px;line-height:1.6;text-align:center;background:#fbf6ec;border-radius:12px;padding:14px 12px;letter-spacing:3px;word-break:break-word;min-height:30px}
@@ -217,7 +217,7 @@ function renderMeals(){
     const m=plan[key];
     const card=document.createElement('div');card.className='meal';
     let html='<h3>'+(key==='lunch'?'🌞':'🌙')+' '+label+'</h3><div class="catbar">';
-    ['A','B','C','D'].forEach(c=>{html+='<button class="catbtn '+c+(m.cat===c?' on':'')+'" data-k="'+key+'" data-c="'+c+'">'+c+' '+CATS[c].n+'<small>'+CATS[c].s+'</small></button>';});
+    ['A','B','C','D'].forEach(c=>{html+='<button class="catbtn '+c+(m.cat===c?' on':'')+'" data-k="'+key+'" data-c="'+c+'">'+c+' '+CATS[c].n+'</button>';});
     html+='</div>';
     card.innerHTML=html;
     if(m.cat==='D'){card.insertAdjacentHTML('beforeend','<div class="lazy">😴 今天躺平，不做这顿啦～</div>');box.appendChild(card);bindCat(card);return;}
@@ -225,8 +225,8 @@ function renderMeals(){
     const chosen=document.createElement('div');chosen.className='chosen';
     let kc=0;
     if(!m.dishes.length)chosen.innerHTML='<span class="mini" style="margin:0">还没选菜，抽一道或下面点选 👇</span>';
-    m.dishes.forEach(n=>{const d=dishByName(n);const k=d?estKcal(d):0;kc+=k;
-      const r=document.createElement('div');r.className='mealdish';r.innerHTML='<span>'+n+'</span><span class="k">~'+k+'kcal/人</span><span class="x">✕</span>';
+    m.dishes.forEach(n=>{const d=dishByName(n);const k=d?estKcal(d):0;kc+=k;const emos=(d&&d.ing||[]).filter(i=>!i.opt).map(i=>emojiFor(i.n)).join('');
+      const r=document.createElement('div');r.className='mealdish';r.innerHTML='<span class="nm" style="font-weight:700">'+n+'</span><span style="font-size:15px">'+emos+'</span><span class="k">~'+k+'kcal/人</span><span class="x">✕</span>';
       r.querySelector('.x').onclick=()=>{m.dishes=m.dishes.filter(x=>x!==n);savePlan();renderMeals();renderBuy();};
       chosen.appendChild(r);});
     card.appendChild(chosen);
