@@ -91,9 +91,19 @@
 
   <!-- 菜单 -->
   <div class="panel feature">
-    <div class="sec" style="justify-content:center;font-size:18px;margin-bottom:4px">🍱 明日菜单</div>
+    <div class="sec" style="justify-content:center;font-size:18px;margin-bottom:4px">🍱 今日菜单</div>
     <div class="mini" style="text-align:center;margin-bottom:14px">按 4 人份准备 · 人多就多加一道菜（用量自己微调）</div>
     <div id="meals" class="meals2"></div>
+  </div>
+
+  <!-- 今日分工 & 备菜 -->
+  <div class="panel">
+    <div class="sec">👩‍🍳 今日分工 & 备菜</div>
+    <div class="addrow"><span class="mini" style="margin:0;align-self:center">我是</span><input id="meName" placeholder="填你的名字（本机记住）" style="flex:1"></div>
+    <div style="font-weight:800;font-size:13px;margin:8px 0 4px;color:var(--sub)">🙋 认领任务</div>
+    <div id="taskList"></div>
+    <div style="font-weight:800;font-size:13px;margin:14px 0 4px;color:var(--sub)">🔪 备菜清单</div>
+    <div id="prepList"></div>
   </div>
 
   <div class="lower">
@@ -128,15 +138,6 @@
   </div>
 
   <!-- 菜谱库 -->
-  <div class="panel">
-    <div class="sec">👩‍🍳 今日分工 & 备菜</div>
-    <div class="addrow"><span class="mini" style="margin:0;align-self:center">我是</span><input id="meName" placeholder="填你的名字（本机记住）" style="flex:1"></div>
-    <div style="font-weight:800;font-size:13px;margin:8px 0 4px;color:var(--sub)">🙋 认领任务</div>
-    <div id="taskList"></div>
-    <div style="font-weight:800;font-size:13px;margin:14px 0 4px;color:var(--sub)">🔪 备菜清单</div>
-    <div id="prepList"></div>
-  </div>
-
   <div class="panel">
     <details>
       <summary>📚 茉莉的菜谱库（加菜 / 改 / 删）</summary>
@@ -303,8 +304,7 @@ function renderRecs(){
   const green=a.filter(x=>x.miss.length===0&&x.hit>0).sort((x,y)=>y.hit-x.hit);
   const amber=a.filter(x=>x.miss.length>0&&x.miss.length<=2).sort((x,y)=>x.miss.length-y.miss.length||y.hit-x.hit);
   function block(title,arr,lim){if(!arr.length)return;box.insertAdjacentHTML('beforeend','<div class="grp-h">'+title+'（'+arr.length+'）</div>');arr.slice(0,lim||arr.length).forEach(x=>box.appendChild(recCard(x)));}
-  block('🟢 现在就能做',green);
-  block('🟡 差一两样',amber,8);
+  const ng=Math.min(green.length,8); block('🟢 现在就能做',green,8); const rem=8-ng; if(rem>0)block('🟡 差一两样',amber,rem);
   if(!green.length&&!amber.length)box.innerHTML='<div class="empty">现有食材凑不齐整道菜，去买点主料吧～</div>';
 }
 function recCard(x){
