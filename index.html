@@ -78,6 +78,10 @@
   .frow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f3eedf;font-size:14px}
   .frow .e{font-size:19px;flex:none}.frow .qt{color:var(--sub)}.frow .ctrl{margin-left:auto;display:flex;gap:6px;flex:none}
   @media(max-width:600px){.meals2{grid-template-columns:1fr}.lower{grid-template-columns:1fr}}
+  body.guest .edit-only{display:none!important}
+  body.guest .catbtn,body.guest .mtime{pointer-events:none;opacity:.82}
+  .lockbar{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin:2px 0 14px}
+  .lockbar .pick{margin:0}.lockbar b{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -88,6 +92,7 @@
     <div class="by">大理人的秘密欢愉</div>
   </div>
   <span class="status wait" id="status">☁️ 连接中…</span>
+  <div class="lockbar" id="lockbar"></div>
 
   <!-- 菜单 -->
   <div class="panel feature">
@@ -99,7 +104,7 @@
   <!-- 今日分工 & 备菜 -->
   <div class="panel">
     <div class="sec">👩‍🍳 今日分工 & 备菜</div>
-    <div class="addrow"><span class="mini" style="margin:0;align-self:center">我是</span><input id="meName" placeholder="填你的名字（本机记住）" style="flex:1"></div>
+    <div class="addrow edit-only"><span class="mini" style="margin:0;align-self:center">我是</span><input id="meName" placeholder="填你的名字（本机记住）" style="flex:1"></div>
     <div style="font-weight:800;font-size:13px;margin:8px 0 4px;color:var(--sub)">🙋 认领任务</div>
     <div id="taskList"></div>
     <div style="font-weight:800;font-size:13px;margin:14px 0 4px;color:var(--sub)">🔪 备菜清单</div>
@@ -110,19 +115,19 @@
     <div class="col">
       <!-- 买菜清单 -->
       <div class="panel">
-        <div class="sec">🛒 要买的菜 <span class="mini" id="buyNote" style="margin:0 0 0 4px"></span></div>
-        <div id="buyList"><div class="empty">选好菜后，这里列出冰箱里没有、需要买的</div></div>
+        <div class="sec">🍽️ 今日新鲜到达餐桌 <span class="mini" id="buyNote" style="margin:0 0 0 4px"></span></div>
+        <div id="buyList"><div class="empty">选好菜后，这里列出今天要新鲜买回、直接上桌的食材</div></div>
       </div>
       <!-- 冰箱 -->
       <div class="panel">
         <div class="sec">🧊 冰箱有啥</div>
-        <div class="addrow">
+        <div class="addrow edit-only">
           <input id="fName" placeholder="食材，如 番茄">
           <input id="fQty" type="number" step="0.5" value="1" style="flex:none;width:54px">
           <select id="fUnit" style="flex:none;width:60px"><option>个</option><option>斤</option><option>根</option><option>把</option><option>瓶</option><option>只</option><option>片</option><option>盒</option></select>
           <button class="btn btn-main" id="fAdd">＋</button>
         </div>
-        <div class="addrow" style="margin-bottom:8px"><span class="mini" style="margin:0;align-self:center">买入日期</span><input id="fDate" type="date" style="flex:none;width:150px"></div>
+        <div class="addrow edit-only" style="margin-bottom:8px"><span class="mini" style="margin:0;align-self:center">买入日期</span><input id="fDate" type="date" style="flex:none;width:150px"></div>
         <div class="fcluster" id="fcluster">🧊</div>
         <div class="flegend" id="flegend"></div>
         <div class="mini">−＋ 调数量，到 0 自动移除。只有 🥬蔬菜 🍎水果 提醒新鲜度(🟠4天/🔴7天)；大米·腊肠·肉类不提醒(耐放/可冷冻)。「做完了」按用量自动扣减。</div>
@@ -142,7 +147,8 @@
   <!-- 菜谱库 -->
   <div class="panel">
     <details>
-      <summary>📚 MODIKA 菜谱库（加菜 / 改 / 删）</summary>
+      <summary>📚 MODIKA 菜谱库</summary>
+      <div class="edit-only">
       <p class="mini">按 <b>4 人份</b> 填。主料必填；勾「可选」＝冰箱有就加。做法用于估卡路里(蒸煮/炖≈不加油，炒/煎/炸加油)。</p>
       <div class="addrow"><input id="dName" placeholder="菜名"></div>
       <div style="margin-bottom:8px"><span class="mini" style="margin:0">类别(可多选)：</span>
@@ -156,6 +162,7 @@
         <button class="btn btn-ghost" id="addIng">＋ 加食材</button>
         <button class="btn btn-main" id="saveDish">💾 保存这道菜</button>
         <button class="btn btn-ghost" id="seed">🌱 载入 MODIKA 菜谱</button>
+      </div>
       </div>
       <div id="libList" style="margin-top:10px"></div>
     </details>
@@ -250,22 +257,22 @@ function renderMeals(){
     let kc=0;
     if(!m.dishes.length)chosen.innerHTML='<span class="mini" style="margin:0">还没选菜，抽一道或下面点选 👇</span>';
     m.dishes.forEach(n=>{const d=dishByName(n);const k=d?estKcal(d):0;kc+=k;const emos=(d&&d.ing||[]).filter(i=>!i.opt).map(i=>emojiFor(i.n)).join('');
-      const r=document.createElement('div');r.className='mealdish';r.innerHTML='<span class="nm" style="font-weight:700">'+n+'</span>'+(d?' '+typeTag(d):'')+'<span style="font-size:15px;margin-left:4px">'+emos+'</span><span class="k">~'+k+'kcal/人</span><span class="x">✕</span>';
+      const r=document.createElement('div');r.className='mealdish';r.innerHTML='<span class="nm" style="font-weight:700">'+n+'</span>'+(d?' '+typeTag(d):'')+'<span style="font-size:15px;margin-left:4px">'+emos+'</span><span class="k">~'+k+'kcal/人</span><span class="x edit-only">✕</span>';
       r.querySelector('.x').onclick=()=>{m.dishes=m.dishes.filter(x=>x!==n);savePlan();renderMeals();renderBuy();};
       chosen.appendChild(r);});
     card.appendChild(chosen);
     if(m.dishes.length)card.insertAdjacentHTML('beforeend','<div class="mealkcal">这顿合计 ~'+kc+' kcal/人</div>');
     // 操作
     const ops=document.createElement('div');ops.className='btns';ops.style.margin='8px 0';
-    const roll=document.createElement('button');roll.className='btn btn-ghost';roll.textContent='🎲 抽一道';roll.onclick=()=>drawOne(key);
+    const roll=document.createElement('button');roll.className='btn btn-ghost edit-only';roll.textContent='🎲 抽一道';roll.onclick=()=>drawOne(key);
     ops.appendChild(roll);
-    if(m.cat==='C'){const cb=document.createElement('button');cb.className='btn btn-ghost';cb.textContent='🍽️ 配一桌';cb.onclick=()=>comboC(key);ops.appendChild(cb);}
-    const done=document.createElement('button');done.className='btn btn-main';done.textContent='✅ 做完了';done.onclick=()=>cooked(key);
+    if(m.cat==='C'){const cb=document.createElement('button');cb.className='btn btn-ghost edit-only';cb.textContent='🍽️ 配一桌';cb.onclick=()=>comboC(key);ops.appendChild(cb);}
+    const done=document.createElement('button');done.className='btn btn-main edit-only';done.textContent='✅ 做完了';done.onclick=()=>cooked(key);
     ops.appendChild(done);card.appendChild(ops);
     if(m.cat==='C')card.insertAdjacentHTML('beforeend','<div class="mini" style="margin:2px 0 0">🥗 建议：1荤 + 1绿叶 + 1非绿叶素/半荤半素</div>');
     // 点选
     const pool=DISHES.filter(d=>(d.cats||[]).includes(m.cat));
-    const det=document.createElement('details');det.innerHTML='<summary>📋 点选 '+CATS[m.cat].n+'（'+pool.length+'道）</summary>';
+    const det=document.createElement('details');det.className='edit-only';det.innerHTML='<summary>📋 点选 '+CATS[m.cat].n+'（'+pool.length+'道）</summary>';
     const grid=document.createElement('div');grid.style.marginTop='6px';
     if(!pool.length)grid.innerHTML='<div class="empty">这类还没有菜，去菜谱库加</div>';
     pool.forEach(d=>{const b=document.createElement('button');b.className='pick'+(m.dishes.includes(d.name)?' on':'');b.textContent=d.name+' ~'+estKcal(d);
@@ -296,8 +303,8 @@ function renderBuy(){
   const have=haveSet(),map={};
   [plan.lunch,plan.dinner].forEach(m=>{if(m.cat==='D')return;m.dishes.forEach(n=>{const d=dishByName(n);(d&&d.ing||[]).forEach(it=>{if(it.opt)return;if(have.has(matchKey(it.n)))return;const k=it.n+'|'+it.u;map[k]=(map[k]||0)+(Number(it.q)||0);});});});
   const box=$('buyList');box.innerHTML='';const keys=Object.keys(map);
-  $('buyNote').textContent=keys.length?'（约4人份·多人就多加菜）':'';
-  if(!keys.length){box.innerHTML='<div class="empty">冰箱够用，或还没选菜 🙂</div>';return;}
+  $('buyNote').textContent=keys.length?'（约4人份·当天买当天上桌）':'';
+  if(!keys.length){box.innerHTML='<div class="empty">冰箱里都齐了，或还没选菜 🙂</div>';return;}
   keys.sort().forEach(k=>{const [n,u]=k.split('|');const row=document.createElement('div');row.className='buyitem';row.innerHTML='<span>'+n+'</span><span class="q">'+showQ(rndBuy(map[k],u,n),u)+'</span>';box.appendChild(row);});
 }
 
@@ -319,7 +326,7 @@ function recCard(x){
   const cats=(d.cats||[]).map(c=>CATS[c]?CATS[c].n:c).join(' · ');
   el.innerHTML='<div class="nm">'+d.name+' <span class="dchip" style="background:none;padding:0;color:var(--sub);font-size:12px">~'+estKcal(d)+'kcal/人</span></div><div class="cats">'+typeTag(d)+' · '+cats+'</div>'+(x.miss.length?'<div class="miss">还差：'+x.miss.join('、')+'</div>':'');
   const ops=document.createElement('div');ops.className='btns';ops.style.marginTop='7px';
-  ['lunch','dinner'].forEach(k=>{const b=document.createElement('button');b.className='pick';b.textContent=(k==='lunch'?'＋午餐':'＋晚餐');
+  ['lunch','dinner'].forEach(k=>{const b=document.createElement('button');b.className='pick edit-only';b.textContent=(k==='lunch'?'＋午餐':'＋晚餐');
     b.onclick=()=>{const m=plan[k];if(m.cat==='D'){toast('这顿是躺平，先换个类别');return;}if(!m.dishes.includes(d.name))m.dishes.push(d.name);savePlan();renderMeals();renderBuy();toast('已加到'+(k==='lunch'?'午餐':'晚餐'));};ops.appendChild(b);});
   el.appendChild(ops);return el;
 }
@@ -336,8 +343,8 @@ function renderFridge(){
     const row=document.createElement('div');row.className='frow';
     row.innerHTML='<span class="e">'+emojiFor(it.name)+'</span><span class="nm">'+it.name+'</span><span class="qt">×'+(Number.isInteger(qty)?qty:qty.toFixed(1))+(it.unit||'')+'</span>'+tag+'<span class="ctrl"></span>';
     const ctrl=row.querySelector('.ctrl');
-    const m=document.createElement('button');m.className='qbtn';m.textContent='−';m.onclick=()=>decFridge(it);
-    const p=document.createElement('button');p.className='qbtn';p.textContent='＋';p.onclick=()=>incFridge(it);
+    const m=document.createElement('button');m.className='qbtn edit-only';m.textContent='−';m.onclick=()=>decFridge(it);
+    const p=document.createElement('button');p.className='qbtn edit-only';p.textContent='＋';p.onclick=()=>incFridge(it);
     ctrl.append(m,p);lg.appendChild(row);});
 }
 async function addFridge(){const name=$('fName').value.trim();if(!name){toast('填个食材名');return;}const qty=parseFloat($('fQty').value)||1;const unit=$('fUnit').value;const added=$('fDate').value||new Date().toISOString().slice(0,10);
@@ -373,8 +380,8 @@ function renderLib(){
     const el=document.createElement('div');el.className='libdish';
     el.innerHTML='<div style="font-weight:800">'+d.name+' '+typeTag(d)+' <span class="mini" style="margin:0">['+(d.cats||[]).join('/')+'] ~'+estKcal(d)+'kcal/人</span></div><div class="mini" style="margin:3px 0 0">主料：'+req+(opt?'　可选：'+opt:'')+'　·　'+(d.method||'')+'</div>';
     const bar=document.createElement('div');bar.className='btns';bar.style.marginTop='7px';
-    const ed=document.createElement('button');ed.className='pick';ed.textContent='✏️ 改';ed.onclick=()=>editDish(d);
-    const dl=document.createElement('button');dl.className='pick';dl.style.color='#bb6a45';dl.textContent='🗑 删';dl.onclick=()=>{if(confirm('删除「'+d.name+'」？'))delDish(d.name);};
+    const ed=document.createElement('button');ed.className='pick edit-only';ed.textContent='✏️ 改';ed.onclick=()=>editDish(d);
+    const dl=document.createElement('button');dl.className='pick edit-only';dl.style.color='#bb6a45';dl.textContent='🗑 删';dl.onclick=()=>{if(confirm('删除「'+d.name+'」？'))delDish(d.name);};
     bar.append(ed,dl);el.appendChild(bar);box.appendChild(el);});
 }
 async function seed(){const {error}=await SB.from('ml_dishes').upsert(SEED,{onConflict:'name'});if(error){toast('载入失败：'+error.message);return;}toast('MODIKA 菜谱已载入 🌱');loadAll();}
@@ -385,15 +392,27 @@ function taskRoles(cat){return cat==='C'?['主备菜','做饭','主收拾','辅�
 function hhmm(t,d){const a=(t||'12:00').split(':').map(Number);let x=((a[0]*60+a[1]+d)%1440+1440)%1440;return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');}
 function roleHint(role,time){if(role.includes('备菜'))return '⏰ '+hhmm(time,-60)+'前完成';if(role==='做饭')return '⏰ '+hhmm(time,-30)+'开始';if(role.includes('收拾'))return '🧹 饭后';return '';}
 function isReheatable(m){m=m||'';return /蒸|焖|炖|煲|卤|电饭锅/.test(m)&&!/炒|煎|凉拌|沙拉|拌/.test(m);}
-function renderTasks(){const box=$('taskList');if(!box)return;box.innerHTML='';const rows=[];[['lunch','🌞午餐'],['dinner','🌙晚餐']].forEach(([key,lab])=>{const m=plan[key];if(m.cat==='D')return;const time=m.time||(key==='lunch'?'12:00':'18:00');taskRoles(m.cat).forEach(r=>rows.push([key+'·'+r,lab+' · '+r,roleHint(r,time)]));});['买菜','取快递','更新冰箱数据'].forEach(t=>rows.push(['日·'+t,'🏠 '+t,'随时']));if(!rows.length){box.innerHTML='<div class="empty">两餐都躺平，今天无需分工 😴</div>';return;}rows.forEach(([k,label,hint])=>{const who=(plan.tasks||{})[k]||'';const row=document.createElement('div');row.className='frow';row.innerHTML='<span>'+label+(hint?' <span class="qt" style="font-size:12px">'+hint+'</span>':'')+'</span><span class="ctrl"></span>';const b=document.createElement('button');if(who){b.className='pick on';b.textContent='✅ '+who;b.onclick=()=>releaseTask(k);}else{b.className='pick';b.textContent='认领';b.onclick=()=>claimTask(k);}row.querySelector('.ctrl').appendChild(b);box.appendChild(row);});}
+function renderTasks(){const box=$('taskList');if(!box)return;box.innerHTML='';const rows=[];[['lunch','🌞午餐'],['dinner','🌙晚餐']].forEach(([key,lab])=>{const m=plan[key];if(m.cat==='D')return;const time=m.time||(key==='lunch'?'12:00':'18:00');taskRoles(m.cat).forEach(r=>rows.push([key+'·'+r,lab+' · '+r,roleHint(r,time)]));});['买菜','取快递','更新冰箱数据'].forEach(t=>rows.push(['日·'+t,'🏠 '+t,'随时']));if(!rows.length){box.innerHTML='<div class="empty">两餐都躺平，今天无需分工 😴</div>';return;}rows.forEach(([k,label,hint])=>{const who=(plan.tasks||{})[k]||'';const row=document.createElement('div');row.className='frow';row.innerHTML='<span>'+label+(hint?' <span class="qt" style="font-size:12px">'+hint+'</span>':'')+'</span><span class="ctrl"></span>';const ctrl=row.querySelector('.ctrl');if(EDIT){const b=document.createElement('button');if(who){b.className='pick on';b.textContent='✅ '+who;b.onclick=()=>releaseTask(k);}else{b.className='pick';b.textContent='认领';b.onclick=()=>claimTask(k);}ctrl.appendChild(b);}else{const s=document.createElement('span');if(who){s.className='pick on';s.style.cursor='default';s.textContent='✅ '+who;}else{s.className='qt';s.style.fontSize='12px';s.textContent='— 待认领';}ctrl.appendChild(s);}box.appendChild(row);});}
 function prepText(it){return (it.p&&String(it.p).trim())?it.p:prepHint(it.n);}
 async function savePrepEdit(d,ingName,text){const i=(d.ing||[]).findIndex(x=>x.n===ingName);if(i<0)return;const t=String(text||'').trim();if(!t||t===prepHint(d.ing[i].n))delete d.ing[i].p;else d.ing[i].p=t;const {error}=await SB.from('ml_dishes').update({ing:d.ing}).eq('name',d.name);if(error){toast('保存失败');return;}toast('备菜已更新');}
-function renderPrep(){const box=$('prepList');if(!box)return;box.innerHTML='';const ds=[];['lunch','dinner'].forEach(key=>{const m=plan[key];if(m.cat==='D')return;m.dishes.forEach(n=>{const d=dishByName(n);if(d)ds.push([key,d]);});});if(!ds.length){box.innerHTML='<div class="empty">确认菜品后，这里列出每道菜要怎么备（可直接改）</div>';return;}ds.forEach(([key,d])=>{const w=document.createElement('div');w.style.marginBottom='10px';const head=document.createElement('div');head.style.cssText='font-weight:800;margin-bottom:3px';head.textContent=(key==='lunch'?'🌞':'🌙')+' '+d.name;w.appendChild(head);if(key==='dinner'&&isReheatable(d.method)){const r=document.createElement('div');r.className='mini';r.style.cssText='margin:0 0 4px;color:#5a8c6e';r.textContent='🍲 可中午顺带做好，晚上加热即可';w.appendChild(r);}(d.ing||[]).filter(i=>!i.opt).forEach(it=>{const row=document.createElement('div');row.className='frow';row.style.padding='5px 0';const e=document.createElement('span');e.className='e';e.textContent=emojiFor(it.n);const nm=document.createElement('span');nm.textContent=it.n;nm.style.minWidth='52px';const inp=document.createElement('input');inp.value=prepText(it);inp.style.cssText='margin-left:auto;flex:1;max-width:210px;border:1px solid var(--line);border-radius:8px;padding:4px 8px;background:#fffdf7;font-size:13px';inp.onchange=()=>savePrepEdit(d,it.n,inp.value);row.append(e,nm,inp);w.appendChild(row);});box.appendChild(w);});}
+function renderPrep(){const box=$('prepList');if(!box)return;box.innerHTML='';const ds=[];['lunch','dinner'].forEach(key=>{const m=plan[key];if(m.cat==='D')return;m.dishes.forEach(n=>{const d=dishByName(n);if(d)ds.push([key,d]);});});if(!ds.length){box.innerHTML='<div class="empty">确认菜品后，这里列出每道菜要怎么备（可直接改）</div>';return;}ds.forEach(([key,d])=>{const w=document.createElement('div');w.style.marginBottom='10px';const head=document.createElement('div');head.style.cssText='font-weight:800;margin-bottom:3px';head.textContent=(key==='lunch'?'🌞':'🌙')+' '+d.name;w.appendChild(head);if(key==='dinner'&&isReheatable(d.method)){const r=document.createElement('div');r.className='mini';r.style.cssText='margin:0 0 4px;color:#5a8c6e';r.textContent='🍲 可中午顺带做好，晚上加热即可';w.appendChild(r);}(d.ing||[]).filter(i=>!i.opt).forEach(it=>{const row=document.createElement('div');row.className='frow';row.style.padding='5px 0';const e=document.createElement('span');e.className='e';e.textContent=emojiFor(it.n);const nm=document.createElement('span');nm.textContent=it.n;nm.style.minWidth='52px';const inp=document.createElement('input');inp.value=prepText(it);inp.readOnly=!EDIT;inp.style.cssText='margin-left:auto;flex:1;max-width:210px;border:1px solid var(--line);border-radius:8px;padding:4px 8px;background:#fffdf7;font-size:13px';if(EDIT)inp.onchange=()=>savePrepEdit(d,it.n,inp.value);row.append(e,nm,inp);w.appendChild(row);});box.appendChild(w);});}
 async function saveTasks(){const {error}=await SB.from('ml_plan').update({tasks:plan.tasks||{}}).eq('id',1);if(error)toast('分工需先在 Supabase 给 ml_plan 加 tasks 列(见说明)');}
 async function claimTask(k){let me=localStorage.getItem('ml_me')||'';if(!me){me=(prompt('你叫什么？(只填一次)')||'').trim();if(!me)return;localStorage.setItem('ml_me',me);const el=$('meName');if(el)el.value=me;}plan.tasks=plan.tasks||{};plan.tasks[k]=me;renderTasks();saveTasks();}
 async function releaseTask(k){if(plan.tasks&&plan.tasks[k]){if(!confirm('释放/改派「'+plan.tasks[k]+'」这项？'))return;delete plan.tasks[k];renderTasks();saveTasks();}}
 /* 实时 */
 function sub(){SB.channel('ml-rt').on('postgres_changes',{event:'*',schema:'public',table:'ml_dishes'},()=>loadAll()).on('postgres_changes',{event:'*',schema:'public',table:'ml_fridge'},()=>loadAll()).on('postgres_changes',{event:'*',schema:'public',table:'ml_plan'},()=>loadAll()).subscribe();}
+
+/* 权限：方案A 轻量口令，本机记 30 天（非加密，仅防手滑误改） */
+const EDIT_KEY='ml_edit_until', EDIT_PASS='modika2026';
+let EDIT=Number(localStorage.getItem(EDIT_KEY)||0)>Date.now();
+function applyMode(){document.body.classList.toggle('guest',!EDIT);renderLock();}
+function renderLock(){const b=$('lockbar');if(!b)return;b.innerHTML='';const t=document.createElement('span');const x=document.createElement('button');x.className='pick';
+  if(EDIT){t.innerHTML='✅ <b>编辑模式</b>（本机已解锁）';x.textContent='退出编辑';x.onclick=lockNow;}
+  else{t.textContent='👀 访客只读模式';x.textContent='🔑 内部解锁';x.onclick=unlockPrompt;}
+  b.append(t,x);}
+function unlockPrompt(){const p=(prompt('输入内部口令解锁编辑：')||'').trim();if(!p)return;if(p===EDIT_PASS){localStorage.setItem(EDIT_KEY,String(Date.now()+30*864e5));EDIT=true;applyMode();refreshUI();toast('已解锁编辑 ✅ 本机 30 天内免重输');}else{toast('口令不对～');}}
+function lockNow(){localStorage.removeItem(EDIT_KEY);EDIT=false;applyMode();refreshUI();toast('已切回访客只读 👀');}
+function refreshUI(){renderMeals();renderBuy();renderRecs();renderFridge();renderLib();}
 
 /* 启动 */
 $('fDate').value=new Date().toISOString().slice(0,10);
@@ -404,6 +423,7 @@ $('fAdd').onclick=addFridge;$('fName').addEventListener('keydown',e=>{if(e.key==
 $('addIng').onclick=()=>addIngRow();$('saveDish').onclick=saveDish;$('seed').onclick=seed;
 addIngRow();addIngRow();
 window.addEventListener('focus',loadAll);
+applyMode();
 loadAll();sub();
 </script>
 </body>
