@@ -116,7 +116,7 @@
       <!-- 买菜清单 -->
       <div class="panel">
         <div class="sec">🍽️ 今日新鲜到达餐桌 <span class="mini" id="buyNote" style="margin:0 0 0 4px"></span></div>
-        <div id="buyList"><div class="empty">选好菜后，这里列出今天要新鲜买回、直接上桌的食材</div></div>
+        <div id="buyList"><div class="empty">菜单一更新，今天的新鲜食材就会出现在这里 🌿</div></div>
       </div>
       <!-- 冰箱 -->
       <div class="panel">
@@ -303,8 +303,8 @@ function renderBuy(){
   const have=haveSet(),map={};
   [plan.lunch,plan.dinner].forEach(m=>{if(m.cat==='D')return;m.dishes.forEach(n=>{const d=dishByName(n);(d&&d.ing||[]).forEach(it=>{if(it.opt)return;if(have.has(matchKey(it.n)))return;const k=it.n+'|'+it.u;map[k]=(map[k]||0)+(Number(it.q)||0);});});});
   const box=$('buyList');box.innerHTML='';const keys=Object.keys(map);
-  $('buyNote').textContent=keys.length?'（约4人份·当天买当天上桌）':'';
-  if(!keys.length){box.innerHTML='<div class="empty">冰箱里都齐了，或还没选菜 🙂</div>';return;}
+  $('buyNote').textContent='· 感受新鲜食材的能量';
+  if(!keys.length){box.innerHTML='<div class="empty">今天的食材都已就位，静候上桌 🌿</div>';return;}
   keys.sort().forEach(k=>{const [n,u]=k.split('|');const row=document.createElement('div');row.className='buyitem';row.innerHTML='<span>'+n+'</span><span class="q">'+showQ(rndBuy(map[k],u,n),u)+'</span>';box.appendChild(row);});
 }
 
