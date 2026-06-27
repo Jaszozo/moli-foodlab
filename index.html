@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>茉莉的美味 Lab</title>
+<title>Chez MODIKA</title>
 <style>
   :root{--bg:#f4f1e8;--paper:#fffdf7;--ink:#4a4334;--sub:#9b9079;--line:#e9e2d2;
     --A:#e0954a;--A2:#fbecd8;--B:#7bae6e;--B2:#e9f3e3;--C:#c77b9e;--C2:#f7e7ef;--D:#a9a18c;--D2:#eeeae0;
@@ -83,7 +83,7 @@
 <body>
 <div class="wrap">
   <div class="hd">
-    <h1>🦊 茉莉的美味 Lab</h1>
+    <h1>🦊 Chez MODIKA</h1>
     <div class="deco">🍅 🥬 🍄 🧄 🌽</div>
     <div class="by">主厨 · 茉莉　|　明日两餐计划</div>
   </div>
@@ -159,7 +159,7 @@
     </details>
   </div>
 
-  <div class="by" style="text-align:center;margin-top:8px">家庭共享 · 改动实时同步 · 茉莉的美味 Lab</div>
+  <div class="by" style="text-align:center;margin-top:8px">家庭共享 · 改动实时同步 · Chez MODIKA</div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -227,10 +227,25 @@ async function loadAll(){
     if(d.error||f.error||p.error)throw(d.error||f.error||p.error);
     DISHES=d.data||[]; FRIDGE=(f.data||[]).sort((a,b)=>new Date(a.added)-new Date(b.added));
     if(p.data){plan={people:4,lunch:p.data.lunch||{cat:'A',dishes:[]},dinner:p.data.dinner||{cat:'C',dishes:[]},tasks:p.data.tasks||{}};}
+    checkNewDay();
     setStatus('ok','☁️ 已同步'); renderMeals(); renderBuy(); renderRecs(); renderFridge(); renderLib();
   }catch(e){setStatus('bad','⚠️ 未连接（请先在 Supabase 跑建表 SQL）');console.error(e);}
 }
 let pT;async function savePlan(){clearTimeout(pT);pT=setTimeout(async()=>{await SB.from('ml_plan').update({people:plan.people,lunch:plan.lunch,dinner:plan.dinner}).eq('id',1);},250);}
+
+/* 每天 0:00 自动清空昨天的菜单和分工（按本地时间） */
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function checkNewDay(){
+  const today=todayStr(),last=localStorage.getItem('ml_lastDay');
+  if(!last){localStorage.setItem('ml_lastDay',today);return false;}
+  if(last===today)return false;
+  localStorage.setItem('ml_lastDay',today);
+  plan.lunch.dishes=[];plan.dinner.dishes=[];plan.tasks={};
+  SB.from('ml_plan').update({lunch:plan.lunch,dinner:plan.dinner,tasks:plan.tasks}).eq('id',1);
+  toast('新的一天 🌅 已清空昨天的菜单和分工');
+  return true;
+}
+function scheduleMidnight(){const now=new Date();const next=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,3);setTimeout(()=>{if(checkNewDay()){renderMeals();renderBuy();renderRecs();}scheduleMidnight();},next-now);}
 
 /* 菜单 */
 function renderMeals(){
@@ -275,12 +290,15 @@ function renderMeals(){
 function bindCat(card){card.querySelectorAll('.catbtn').forEach(b=>b.onclick=()=>{plan[b.dataset.k].cat=b.dataset.c;savePlan();renderMeals();renderBuy();});card.querySelectorAll('.mtime').forEach(t=>t.onchange=()=>{plan[t.dataset.k].time=t.value;savePlan();renderTasks();});}
 function drawOne(key){const m=plan[key];const pool=DISHES.filter(d=>(d.cats||[]).includes(m.cat)&&!m.dishes.includes(d.name));if(!pool.length){toast('没有更多可抽的了');return;}const pick=pool[Math.floor(Math.random()*pool.length)];m.dishes.push(pick.name);savePlan();renderMeals();renderBuy();toast('抽到：'+pick.name);}
 async function cooked(key){const m=plan[key];if(!m.dishes.length){toast('这顿还没选菜');return;}
-  if(!confirm('「'+(key==='lunch'?'午餐':'晚餐')+'」做完了？把用到的食材从冰箱划掉，并清空这顿。'))return;
+  if(!confirm('「'+(key==='lunch'?'午餐':'晚餐')+'」做完了？冰箱里有的按用量划掉；没进冰箱的（现买现吃）直接当作已买已吃，无需添加。这顿菜单随后清空。'))return;
   const need={};m.dishes.forEach(n=>{const d=dishByName(n);(d&&d.ing||[]).forEach(it=>{if(it.opt)return;const k=matchKey(it.n);need[k]=(need[k]||0)+(Number(it.q)||0);});});
+  const needKeys=Object.keys(need);
   let cnt=0;const order=[...FRIDGE].sort((a,b)=>new Date(a.added)-new Date(b.added));
   for(const f of order){const k=matchKey(f.name);if(!need[k]||need[k]<=0.001)continue;const want=useAmt(need[k],f.unit,f.name);const take=Math.min(want,Number(f.qty)||0);const left=Math.round(((Number(f.qty)||0)-take)*10)/10;need[k]=Math.round((need[k]-take)*10)/10;cnt++;if(left<=0.05){await SB.from('ml_fridge').delete().eq('id',f.id);}else{await SB.from('ml_fridge').update({qty:left}).eq('id',f.id);}}
+  const eaten=needKeys.filter(k=>need[k]>0.05).length;
   m.dishes=[];await SB.from('ml_plan').update({lunch:plan.lunch,dinner:plan.dinner}).eq('id',1);
-  toast('已按用量扣减 '+cnt+' 样食材');loadAll();
+  let msg='已按用量扣减 '+cnt+' 样食材';if(eaten)msg+='，'+eaten+' 样当作现买现吃 ✅';
+  toast(msg);loadAll();
 }
 
 /* 买菜清单 */
@@ -397,7 +415,7 @@ $('fAdd').onclick=addFridge;$('fName').addEventListener('keydown',e=>{if(e.key==
 $('addIng').onclick=()=>addIngRow();$('saveDish').onclick=saveDish;$('seed').onclick=seed;
 addIngRow();addIngRow();
 window.addEventListener('focus',loadAll);
-loadAll();sub();
+loadAll();sub();scheduleMidnight();
 </script>
 </body>
 </html>
